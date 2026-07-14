@@ -9,33 +9,13 @@ Functions here are reused across:
     - drift_ohms_law.py     (diffusion + directional drift, for comparison)
 """
 
-import os
 import numpy as np
+import os
+import sys
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-def get_figures_dir(script_file):
-    """
-    Given a script's __file__, return (and create) a 'figures' folder
-    next to that script.
-
-    This makes savefig() paths resolve relative to the SCRIPT's own
-    location, not whatever directory the script happens to be run from
-    (e.g. some Code Runner extensions run from a workspace root instead
-    of the script's own folder, which silently breaks plain relative
-    paths like "figures/plot.png").
-
-    Call this from each script as:
-        FIGURES_DIR = get_figures_dir(__file__)
-
-    Note: __file__ always refers to whichever script is CALLING this
-    function (passed in explicitly), not to utils.py itself - that's
-    why script_file has to be passed in rather than hardcoded here.
-    """
-    script_dir = os.path.dirname(os.path.abspath(script_file))
-    figures_dir = os.path.join(script_dir, "figures")
-    os.makedirs(figures_dir, exist_ok=True)
-    return figures_dir
-
+from shared.plotting_utils import get_figures_dir
 
 def simulate_random_walks(n_particles, n_steps, step_size, rng=None):
     """

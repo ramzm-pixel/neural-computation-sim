@@ -14,9 +14,12 @@ same random walk logic into every file:
   ±step_size random steps, starting at x=0
 - `compute_mean_displacement` / `compute_mean_squared_displacement` — ⟨x⟩
   and ⟨x²⟩ across particles at each timestep
-- `get_figures_dir` — makes sure the `figures/` output folder is found
-  relative to the script itself, not whatever folder I happened to run it
-  from (this bit me once — see notes below)
+
+`get_figures_dir` used to live here too, but it's not actually specific to
+this lecture (every lecture folder needs it), so it now lives in
+`shared/plotting_utils.py` at the repo root and gets re-exported from this
+file, so `from utils import get_figures_dir, ...` still works unchanged in
+every script below.
 
 ### `random_walk.py`
 The core diffusion simulation. This is where I checked:
@@ -78,10 +81,17 @@ Produces: `resistance_vs_length.png`, `resistance_vs_area.png`,
 
 ## Running
 
-From this folder:
+From the repo root, one-time setup:
 
 ```bash
-pip install -r ../../requirements.txt
+pip install -r requirements.txt
+pip install -e .
+```
+
+Then, from this folder:
+
+```bash
+cd lectures/01-ionic-diffusion-drift
 python random_walk.py
 python diffusion_fick.py
 python drift_ohms_law.py
@@ -102,4 +112,7 @@ drift bias.
   come up in the course yet, so for now I'm just treating diffusion and
   drift as two separate mechanisms and comparing them visually rather than
   mathematically.
-
+- **Update after Lecture 2:** the diffusion-vs-drift competition from this
+  lecture turned out to be exactly the mechanism behind the Nernst
+  (equilibrium) potential — see `lectures/02-rc-neuron-model/nernst_potential.py`,
+  which reuses this lecture's random walk mechanics directly.
