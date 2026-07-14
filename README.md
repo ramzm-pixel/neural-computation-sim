@@ -130,7 +130,7 @@ closed-form exponential solution. Also explicitly verifies that at t=τ,
 the voltage has closed ~63% (1 - 1/e) of the gap to V∞ — the defining
 property of the time constant.
 
-![RC step response: analytic vs simulated](lectures/02-rc-neuron-model/figures/rc_step_analytic_vs_simulated.png)
+![RC step response: analytic vs simulated](lectures/02-rc-neuron/figures/rc_step_analytic_vs_simulated.png)
 
 **`low_pass_filter.py`** — sweeps current-pulse width from far below τ to
 far above τ, and plots peak voltage response vs. pulse width. This is the
@@ -138,7 +138,7 @@ plot that actually shows *why* an RC neuron behaves like a low-pass filter:
 short pulses barely move the voltage before they end, long pulses have
 time to approach V∞.
 
-![Low-pass filter curve](lectures/02-rc-neuron-model/figures/low_pass_filter_curve.png)
+![Low-pass filter curve](lectures/02-rc-neuron/figures/low_pass_filter_curve.png)
 
 **`nernst_potential.py`** — derives the equilibrium (Nernst) potential via
 the Boltzmann-distribution route from the lecture, and checks it against
@@ -155,7 +155,7 @@ formula.
 More detail — including a real bug I hit (a sign error in the Nernst
 equation that flipped E_K positive) and a subtler one (`odeint` silently
 skipping over a current pulse entirely for certain pulse widths) — is in
-the [Lecture 2 README](lectures/02-rc-neuron-model/README.md).
+the [Lecture 2 README](lectures/02-rc-neuron/README.md).
 
 ### Running it
 
