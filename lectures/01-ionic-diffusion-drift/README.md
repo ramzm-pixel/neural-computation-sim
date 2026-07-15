@@ -114,5 +114,5 @@ drift bias.
   mathematically.
 - **Update after Lecture 2:** the diffusion-vs-drift competition from this
   lecture turned out to be exactly the mechanism behind the Nernst
-  (equilibrium) potential — see `lectures/02-rc-neuron-model/nernst_potential.py`,
+  (equilibrium) potential — see `lectures/02-rc-neuron/nernst_potential.py`,
   which reuses this lecture's random walk mechanics directly.

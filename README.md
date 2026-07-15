@@ -17,12 +17,13 @@ course.
   [`lectures/01-ionic-diffusion-drift`](lectures/01-ionic-diffusion-drift)
 - [x] **Lecture 2 — The RC Model of a Neuron**: passive membrane, membrane
   time constant, low-pass filtering, and the Nernst (equilibrium) potential →
-  [`lectures/02-rc-neuron-model`](lectures/02-rc-neuron-model)
-- [ ] **Lecture 3 — Ion-Specific Conductances and Integrate-and-Fire Models**:
+  [`lectures/02-rc-neuron`](lectures/02-rc-neuron)
+- [x] **Lecture 3 — Ion-Specific Conductances and Integrate-and-Fire Models**:
   reversal/driving-potential framework (each ion conductance modeled as a
   resistor in series with a battery), then the Integrate-and-Fire spiking
   model and its firing-rate-vs-injected-current derivation, including the
-  rheobase (minimum current needed to spike at all)
+  rheobase (minimum current needed to spike at all) →
+  [`lectures/03-integrate-and-fire`](lectures/03-integrate-and-fire)
 - [ ] **Lecture 4/5 — Hodgkin-Huxley**: voltage-gated channels, simulated
   action potentials — this is the last lecture this repo covers. After
   that I'll keep watching 9.40 on its own, without turning every lecture
@@ -36,26 +37,44 @@ folder and its own README with more detail.
 ```
 neural-computation-sim/
 ├── shared/
-│   └── plotting_utils.py       # get_figures_dir() - lecture-agnostic helper
+│   ├── plotting_utils.py       # get_figures_dir() - lecture-agnostic helper
+│   └── circuit_utils.py        # RC circuit building blocks reused across Lecture 2 and 3
 └── lectures/
     ├── 01-ionic-diffusion-drift/
-    └── 02-rc-neuron-model/
+    ├── 02-rc-neuron/
+    └── 03-integrate-and-fire/
 ```
 
-`shared/` holds the one piece of code every lecture folder needs regardless
-of topic (a helper that makes sure figures save next to the script that
-made them, not wherever the terminal happened to be `cd`'d into). It's
-installed as an editable package (see Setup below) so every lecture folder
-can import it with a plain `from shared.plotting_utils import get_figures_dir`,
-no matter which directory a script is actually run from.
+`shared/` holds code that isn't specific to any one lecture's topic and
+would otherwise get duplicated (or, worse, drift out of sync) across
+lecture folders. It's installed as an editable package (see Setup below)
+so every lecture folder can import from it with a plain
+`from shared.plotting_utils import get_figures_dir`, no matter which
+directory a script is actually run from.
+
+`plotting_utils.py` is the one every lecture needs regardless of topic (a
+helper that makes sure figures save next to the script that made them, not
+wherever the terminal happened to be `cd`'d into).
+
+`circuit_utils.py` is newer — it originally lived only in Lecture 2's
+`utils.py`, but once Lecture 3 needed the same RC machinery (current
+waveform generators, `tau`/`V_inf`, the `odeint`-based simulator), I pulled
+it out to `shared/` rather than reaching into Lecture 2's folder from
+Lecture 3 or copy-pasting the same functions (and the same `odeint`
+discontinuity bug, see the Lecture 2 README) a second time. Lecture 2's
+`utils.py` was updated to re-export from here instead of defining its own
+copies — same function names and signatures, just relocated, so nothing
+in Lecture 2's scripts had to change.
 
 Everything else — simulation logic, plotting, demos — is lecture-specific
 and lives in that lecture's own folder. Each lecture folder has its own
 `utils.py` for helpers that get reused across that lecture's scripts (e.g.
-`simulate_random_walks` in Lecture 1, `simulate_rc_response` in Lecture 2).
-Lecture-specific `utils.py` files re-export `get_figures_dir` from `shared`,
-so within a lecture folder everything can still be pulled from one local
-`utils` import.
+`simulate_random_walks` in Lecture 1, `simulate_lif` in Lecture 3).
+Lecture-specific `utils.py` files re-export whatever they need from
+`shared/`, so within a lecture folder everything can still be pulled from
+one local `from utils import ...`, and each lecture folder only ever
+imports from `shared/` — never from another lecture's folder — so every
+folder stays self-sufficient as long as `shared/` is present.
 
 ## Setup
 
@@ -157,6 +176,56 @@ equation that flipped E_K positive) and a subtler one (`odeint` silently
 skipping over a current pulse entirely for certain pulse widths) — is in
 the [Lecture 2 README](lectures/02-rc-neuron/README.md).
 
+## Module 3: Ion-Specific Conductances and Integrate-and-Fire Models
+
+Third project. Lecture 3 does two things: it fixes the last piece missing
+from Lecture 2's RC model (an ion conductance is a resistor *in series with
+a battery*, not just a resistor — that's what gives a neuron a real resting
+potential instead of an arbitrary starting voltage), and then sets the
+passive membrane model aside in favor of a much simpler spiking model —
+integrate-and-fire — building up its firing-rate-vs-current relationship
+from scratch, including a genuinely new phenomenon the leak introduces: a
+minimum current (rheobase) below which the neuron never fires at all.
+
+**`conductance_battery.py`** — models an ion conductance as
+`I_ion = G_ion * (V - E_ion)` (driving-potential form), shows the I-V curve
+crossing zero at `E_ion` rather than at V=0, and re-derives Lecture 2's RC
+equation with `V_inf` now offset by the battery voltage. Directly fixes the
+"dead neuron" behavior from `capacitor_model.py`: with the leak's battery
+in place, the membrane relaxes back to a genuine resting potential
+(`E_leak`) instead of freezing wherever it stopped.
+
+**`integrate_and_fire.py`** — the leaky and no-leak integrate-and-fire
+spiking models: hard voltage threshold, then instant reset. Confirms
+regular periodic firing under constant current in both cases, and confirms
+the leaky model's qualitatively new behavior — below the rheobase current,
+`V` just settles at `V_inf` and never reaches threshold, no matter how long
+current is injected.
+
+**`firing_rate_curve.py`** — sweeps injected current across a range
+spanning below and above rheobase, and compares the exact closed-form
+firing rate (from solving the leaky IF ODE for the inter-spike interval)
+against the large-current linear approximation from the lecture. Also
+actually runs `simulate_lif` at several current values and checks the
+resulting empirical firing rate against the exact formula, rather than
+just trusting that the closed-form algebra is right because it looks
+right — all empirical points matched to within ~0.02 Hz.
+
+![Leaky IF f-I curve: exact vs. linear approximation vs. simulated](lectures/03-integrate-and-fire/figures/fi_curve_exact_vs_linear.png)
+
+**`utils.py`** — shared helpers for this lecture's three scripts:
+`driving_potential`, `ionic_current`, `rheobase_current`, `simulate_lif`
+(the threshold-and-reset simulator — `odeint` alone can't do a reset event
+mid-integration, so this steps the ODE forward chunk-by-chunk between
+spikes), and the three firing-rate functions (`firing_rate_no_leak`,
+`firing_rate_leaky_exact`, `firing_rate_leaky_linear_approx`). Re-exports
+`step_current`, `pulse_current`, `tau_from_RC`, `V_inf_from_current`, and
+`simulate_rc_response` from `shared/circuit_utils.py` rather than
+redefining them.
+
+More detail is in the
+[Lecture 3 README](lectures/03-integrate-and-fire/README.md).
+
 ### Running it
 
 ```bash
@@ -168,11 +237,16 @@ python random_walk.py
 python diffusion_fick.py
 python drift_ohms_law.py
 
-cd ../02-rc-neuron-model
+cd ../02-rc-neuron
 python capacitor_model.py
 python rc_model.py
 python low_pass_filter.py
 python nernst_potential.py
+
+cd ../03-integrate-and-fire
+python conductance_battery.py
+python integrate_and_fire.py
+python firing_rate_curve.py
 ```
 
 Each script has `# %%` cell markers so I could run them cell-by-cell in

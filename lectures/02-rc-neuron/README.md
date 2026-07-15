@@ -16,8 +16,20 @@ Shared code across all four scripts below:
 - `step_current` / `pulse_current` — current waveform generators
 - `tau_from_RC`, `V_inf_from_current` — the two derived quantities that
   characterize an RC circuit's response
-- `rc_derivative`, `simulate_rc_response` — the ODE right-hand side and a
-  wrapper around `scipy.integrate.odeint` that numerically integrates it
+- `simulate_rc_response` — an `odeint` wrapper that numerically integrates
+  the RC ODE
+
+**Update after Lecture 3:** these five functions used to be defined
+directly in this file. Once Lecture 3 needed the same RC machinery (with
+an added battery/reversal-potential term), I pulled them out to
+`shared/circuit_utils.py` at the repo root instead of either reaching into
+this folder from Lecture 3's `utils.py` or copy-pasting the same functions
+a second time (which would've meant fixing the `odeint`-skips-a-pulse bug
+below in two places if it ever came up again). This file now just
+re-exports them from there — same names, same signatures, so
+`rc_model.py`/`capacitor_model.py`/`low_pass_filter.py` didn't need any
+changes, and I reran all four scripts against the refactored `utils.py` to
+confirm the output was byte-identical to before.
 
 `get_figures_dir` is re-exported here from `shared/plotting_utils.py` at
 the repo root (see the top-level README), so `from utils import
@@ -101,7 +113,7 @@ pip install -e .
 Then, from this folder:
 
 ```bash
-cd lectures/02-rc-neuron-model
+cd lectures/02-rc-neuron
 python capacitor_model.py
 python rc_model.py
 python low_pass_filter.py
@@ -159,3 +171,11 @@ own, and it won't necessarily error out if it misses one.
   would be a much bigger simulation). It's there to build intuition for
   *why* diffusion and drift reach a balance, not to numerically derive the
   -75mV figure from particle mechanics.
+- **Update after Lecture 3:** the "battery" this lecture derives (the
+  Nernst potential) becomes an actual circuit element in Lecture 3 — a
+  resistor in series with a battery of voltage `E_ion`, rather than the
+  plain leak resistor used throughout this folder. See
+  `lectures/03-integrate-and-fire/conductance_battery.py`, which also
+  finally fixes the "dead neuron" behavior from `capacitor_model.py`: with
+  a battery in the circuit, `V` relaxes to a genuine resting potential with
+  zero injected current, instead of just freezing wherever it stopped.
