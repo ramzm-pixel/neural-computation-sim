@@ -36,10 +36,10 @@ folder and its own README with more detail.
 
 ```
 neural-computation-sim/
-├── shared/
-│   ├── plotting_utils.py       # get_figures_dir() - lecture-agnostic helper
-│   └── circuit_utils.py        # RC circuit building blocks reused across Lecture 2 and 3
 └── lectures/
+    ├── shared/
+    │   ├── plotting_utils.py       # get_figures_dir() - lecture-agnostic helper
+    │   ├── circuit_utils.py        # RC circuit building blocks reused across Lecture 2 and 3
     ├── 01-ionic-diffusion-drift/
     ├── 02-rc-neuron/
     └── 03-integrate-and-fire/
