@@ -116,3 +116,11 @@ drift bias.
   lecture turned out to be exactly the mechanism behind the Nernst
   (equilibrium) potential — see `lectures/02-rc-neuron/nernst_potential.py`,
   which reuses this lecture's random walk mechanics directly.
+- **Final update (repo closes at Lecture 5):** the Einstein relation never
+  came up explicitly in Lectures 2 through 5 either, so this stays exactly
+  as flagged above rather than guessing at a connection the course itself
+  never made. Diffusion and drift stayed useful as separate, comparable
+  mechanisms all the way through the repo — the driving-potential framework
+  in Lecture 3 and the Hodgkin-Huxley gating variables in Lecture 4/5 both
+  build on the same "resistor + battery" picture that grew out of this
+  lecture's simulations, without ever needing the D-R connection itself.

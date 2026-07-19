@@ -24,13 +24,16 @@ course.
   model and its firing-rate-vs-injected-current derivation, including the
   rheobase (minimum current needed to spike at all) →
   [`lectures/03-integrate-and-fire`](lectures/03-integrate-and-fire)
-- [ ] **Lecture 4/5 — Hodgkin-Huxley**: voltage-gated channels, simulated
-  action potentials — this is the last lecture this repo covers. After
-  that I'll keep watching 9.40 on its own, without turning every lecture
-  into a coding project (see note at the bottom).
+- [x] **Lecture 4/5 — Hodgkin-Huxley**: voltage-gated sodium and potassium
+  conductances built from gating variables, assembled into the full
+  coupled spiking model, and applied to a real disease (sodium channel
+  myotonia and periodic paralysis) as a case study in turning a word
+  model into equations →
+  [`lectures/04-05-hodgkin-huxley`](lectures/04-05-hodgkin-huxley)
 
-I'll update this as I go through the course — each lecture gets its own
-folder and its own README with more detail.
+Each lecture got its own folder and its own README with more detail as I
+went through the course. This README (and the roadmap above) reflects the
+finished repo — see the note on scope at the bottom for why it stops here.
 
 ## Project structure
 
@@ -42,7 +45,8 @@ neural-computation-sim/
     │   ├── circuit_utils.py        # RC circuit building blocks reused across Lecture 2 and 3
     ├── 01-ionic-diffusion-drift/
     ├── 02-rc-neuron/
-    └── 03-integrate-and-fire/
+    ├── 03-integrate-and-fire/
+    └── 04-05-hodgkin-huxley/
 ```
 
 `shared/` holds code that isn't specific to any one lecture's topic and
@@ -69,12 +73,13 @@ in Lecture 2's scripts had to change.
 Everything else — simulation logic, plotting, demos — is lecture-specific
 and lives in that lecture's own folder. Each lecture folder has its own
 `utils.py` for helpers that get reused across that lecture's scripts (e.g.
-`simulate_random_walks` in Lecture 1, `simulate_lif` in Lecture 3).
-Lecture-specific `utils.py` files re-export whatever they need from
-`shared/`, so within a lecture folder everything can still be pulled from
-one local `from utils import ...`, and each lecture folder only ever
-imports from `shared/` — never from another lecture's folder — so every
-folder stays self-sufficient as long as `shared/` is present.
+`simulate_random_walks` in Lecture 1, `simulate_lif` in Lecture 3, the full
+Hodgkin-Huxley gating/integration machinery in Lecture 4/5). Lecture-specific
+`utils.py` files re-export whatever they need from `shared/`, so within a
+lecture folder everything can still be pulled from one local `from utils
+import ...`, and each lecture folder only ever imports from `shared/` —
+never from another lecture's folder — so every folder stays self-sufficient
+as long as `shared/` is present.
 
 ## Setup
 
@@ -226,6 +231,68 @@ redefining them.
 More detail is in the
 [Lecture 3 README](lectures/03-integrate-and-fire/README.md).
 
+## Module 4/5: The Hodgkin-Huxley Model
+
+Fourth and final project. Lectures 4 and 5 replace Lecture 3's
+threshold-and-reset spike rule with the real thing: sodium and potassium
+conductances built from voltage- and time-dependent gating variables,
+coupled back into the membrane equation they themselves depend on, so
+spiking becomes an emergent property of the system rather than an assumed
+rule bolted on from outside. Lecture 4 works out potassium's gating
+variable; Lecture 5 works out sodium's (which turns out to need two gates,
+not one), assembles the full model, and spends its second half modeling a
+real disease end-to-end.
+
+**`gating_kinetics.py`** — the math every gate shares: `alpha(V)`,
+`beta(V)` in, `(x_inf, tau_x)` out. Confirms `n_inf`/`m_inf` rise with
+depolarization while `h_inf` falls (mirror-image sigmoids), and that `m`
+is much faster than `n` or `h` — the quantitative reason sodium activates
+fast while potassium activation and sodium inactivation are both slow.
+
+**`potassium_conductance.py`** — simulates `n`'s step response and
+`G_K = G_K_bar * n^4`, confirming the "delayed rectifier" shape: turns on
+and stays on for as long as depolarization holds.
+
+**`sodium_conductance.py`** — simulates `m` and `h` separately under the
+same step, multiplies them into `G_Na = G_Na_bar * m^3 * h`, and shows the
+product reproduces sodium's transient rise-then-decay current — something
+a single gate can never produce alone. Also isolates the separate
+driving-force effect that makes peak sodium current collapse near `E_Na`,
+independent of inactivation.
+
+**`action_potential.py`** — the centerpiece: integrates the full coupled
+`V`/`n`/`m`/`h` system and confirms a brief current pulse alone produces a
+complete action potential (peak ~+40 mV absolute, matching the classic
+textbook number) with no spike rule anywhere in the code. A control with
+`G_Na` forced to zero confirms the spike genuinely depends on the
+sodium/potassium feedback loop, not just "current in, voltage out."
+
+![Full Hodgkin-Huxley action potential](lectures/04-05-hodgkin-huxley/figures/action_potential_full.png)
+
+**`refractory_period.py`** — a two-pulse protocol confirming the
+refractory period is graded, not a hard cutoff: the minimum current needed
+to trigger a second spike starts very high right after the first spike and
+decreases smoothly back toward baseline as the inactivation gate recovers.
+
+**`myotonia_model.py`** — the disease capstone. Extends the model with a
+t-tubule potassium-accumulation compartment and sweeps one parameter (the
+fraction of sodium channels failing to inactivate) to reproduce two
+clinically opposite phenotypes from a single mechanism: a small failure
+fraction produces a myotonic run (repeated spikes continuing after the
+stimulus stops), a larger one produces depolarization block (voltage locks
+high and flat) — periodic paralysis.
+
+![Myotonia vs. paralysis: one parameter, two phenotypes](lectures/04-05-hodgkin-huxley/figures/myotonia_vs_paralysis.png)
+
+**`utils.py`** — the Hodgkin-Huxley rate functions, gating kinetics, and
+full coupled integrator used across all six scripts above. Kept local to
+this folder rather than added to `shared/`, since nothing outside this
+lecture needs it.
+
+More detail — including a genuinely subtle 1000x unit bug in the t-tubule
+model and how I tracked it down — is in the
+[Lecture 4/5 README](lectures/04-05-hodgkin-huxley/README.md).
+
 ### Running it
 
 ```bash
@@ -247,6 +314,14 @@ cd ../03-integrate-and-fire
 python conductance_battery.py
 python integrate_and_fire.py
 python firing_rate_curve.py
+
+cd ../04-05-hodgkin-huxley
+python gating_kinetics.py
+python potassium_conductance.py
+python sodium_conductance.py
+python action_potential.py
+python refractory_period.py
+python myotonia_model.py
 ```
 
 Each script has `# %%` cell markers so I could run them cell-by-cell in
@@ -255,12 +330,12 @@ simulation every time I wanted to tweak a parameter.
 
 ## A note on scope
 
-I'm deliberately capping this repo at Lecture 5 (Hodgkin-Huxley model,
-finished across lectures 4-5). Coding up every lecture from here on would
-turn into busywork rather than something that's actually useful to show —
+This repo is capped at Lecture 5 (Hodgkin-Huxley model, finished across
+Lectures 4-5). Coding up every lecture from here on would turn into
+busywork rather than something that's actually useful to show —
 reproducing textbook derivations in code is good for learning, but past a
 certain point it stops being differentiated portfolio work. I'll keep
-watching 9.40 after that, just without a matching folder for every lecture.
-The next project after this one will likely involve real EEG data and
+watching 9.40 on my own after this, just without a matching folder for
+every lecture. The next project will likely involve real EEG data and
 reproducing a published BCI decoding paper, which is a better use of that
 kind of time.

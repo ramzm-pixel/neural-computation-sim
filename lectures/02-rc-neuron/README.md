@@ -159,6 +159,23 @@ will matter again for the Hodgkin-Huxley model), the solver needs to be
 told explicitly where the discontinuities are. It won't find them on its
 own, and it won't necessarily error out if it misses one.
 
+**Final update (repo closes at Lecture 5): checked whether this prediction
+actually held up.** It didn't, and it's worth saying why rather than just
+leaving the prediction dangling. None of the Hodgkin-Huxley scripts in
+`lectures/04-05-hodgkin-huxley/` pass `tcrit` into their `odeint` calls,
+and I explicitly tested for the same failure mode there before closing
+this out — comparing `simulate_hh_neuron`'s output with and without
+`tcrit` set, at both the fine time resolution the scripts actually use and
+a deliberately coarse 20x-fewer-samples grid meant to make the bug more
+likely to show up. Both cases matched to within numerical noise
+(~4x10⁻⁵ mV out of a ~105 mV spike). My best explanation: the HH system's
+own fast internal dynamics (the sodium activation gate `m` has a time
+constant around 0.2ms — see the Lecture 4/5 README) force `odeint`'s
+adaptive step size to stay small everywhere regardless of the input, in a
+way the passive RC circuit here never did. So the discontinuity risk this
+README flagged was real for *this* lecture's plain RC model, but didn't
+transfer to the nonlinear gated system the way I'd guessed it would.
+
 ## Notes to self / things I'm unsure about
 
 - `R_L` and `C` in these scripts are chosen so `tau = 1.0s` exactly, purely

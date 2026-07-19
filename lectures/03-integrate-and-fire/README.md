@@ -177,3 +177,14 @@ about if firing rates ever look slightly off at coarser time resolution.
   (`m`, `h`, `n`), where spiking is an emergent property of voltage- and
   time-dependent conductances rather than an assumed rule — see the
   top-level README's roadmap.
+- **Final update (repo closes at Lecture 5):** both threads above are
+  resolved now that the repo is finished. The GHK equation stayed
+  unimplemented through Lecture 5 as well — it never came up as a concrete
+  formula in the actual lecture material, only as the same qualitative
+  aside, so there was nothing to check code against by the end either.
+  The spike-rule simplification did get replaced as anticipated:
+  `lectures/04-05-hodgkin-huxley/action_potential.py` integrates the full
+  coupled `V`/`n`/`m`/`h` system and produces a real action potential with
+  no threshold-and-reset rule anywhere in the code — `simulate_lif`'s
+  chunk-by-chunk reset logic in this folder turned out to be the last time
+  this repo needed that trick.
